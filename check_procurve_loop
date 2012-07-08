@@ -1,7 +1,7 @@
 #!/bin/bash
 #############################################################################
 # File         check_procurve_loop
-# Version      1
+# Version      2
 # Description  Monitor HP ProCurve switches for activated loop protection
 # Copyright    Datarådgivarna AB, Nyköping
 # Written by   Daniel Ruus
@@ -11,6 +11,9 @@
 #
 # Changelog
 # ===============================================
+#    2  2012-07-08 Daniel Ruus
+#     - Misc modifications, such as removing redundant code and catching
+#       errors thrown by snmpwalk
 #    1  2012-07-08 Daniel Ruus
 #     - Initial release
 #############################################################################
@@ -23,7 +26,7 @@ STATE_UNKNOWN=3
 
 PATH=/usr/local/bin:/usr/bin:/bin 
 
-TMP_FILE=/tmp/check_procurve_loop.log
+# Define a counter for the number of ports on the switch
 PORTCNT=0
 
 # We require the program snmpwalk, so check that we can find it
@@ -47,7 +50,7 @@ do
        case ${ARGV} in
        H)      host=${OPTARG};;
        C)      community=${OPTARG};;
-       *)      echo "Wrong option given. Please use options -H for host, -C for SNMP-Community, -t for type, -w for warning and -c for critical"
+       *)      echo "Incorrect option given. Please use options -H for host, -C for SNMP-Community, -t for type, -w for warning and -c for critical"
                exit 1
                ;;
        esac
@@ -81,7 +84,7 @@ done
 # Report our findings
 if [ $state_crit -eq 0 ]
 then
-	echo "OK - No loops detected, checked $PORTCNT ports."
+	echo "OK - No loops detected ($PORTCNT ports checked)"
 	exit $STATE_OK
 elif [ $state_crit -gt 0 ]
 then
