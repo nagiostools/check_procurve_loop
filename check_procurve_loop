@@ -1,0 +1,98 @@
+#!/bin/bash
+#############################################################################
+# File         check_procurve_loop
+# Version      1
+# Description  Monitor HP ProCurve switches for activated loop protection
+# Copyright    Datarådgivarna AB, Nyköping
+# Written by   Daniel Ruus
+# Modified by  Daniel Ruus
+# Created      2012-07-08
+# Modified     2012-07-08
+#
+# Changelog
+# ===============================================
+#    1  2012-07-08 Daniel Ruus
+#     - Initial release
+#############################################################################
+
+# Define the exit codes
+STATE_OK=0
+STATE_WARNING=1
+STATE_CRITICAL=2
+STATE_UNKNOWN=3
+
+PATH=/usr/local/bin:/usr/bin:/bin # Set path
+
+TMP_FILE=/tmp/check_procurve_loop.log
+PORTCNT=0
+
+for cmd in snmpwalk awk grep wc [
+do
+ if ! `which ${cmd} 1>/dev/null`
+ then
+ echo "UNKNOWN: ${cmd} does not exist, please check if command exists and PATH is correct"
+ exit ${STATE_UNKNOWN}
+ fi
+done
+
+# Command line arguments
+if [ $# -lt 4 ]
+then
+	echo "Usage: $0 -H <host> -C <snmp community>"
+	exit 1
+fi
+
+while getopts "H:C:" ARGV;
+do
+       case ${ARGV} in
+       H)      host=${OPTARG};;
+       C)      community=${OPTARG};;
+       *)      echo "Wrong option given. Please use options -H for host, -C for SNMP-Community, -t for type, -w for warning and -c for critical"
+               exit 1
+               ;;
+       esac
+done
+
+
+# Check the status
+status=$(snmpwalk -v 2c -O vqe -c $community $host 1.3.6.1.4.1.11.2.14.11.5.1.12.1.5.2.1.1.2)
+
+state_crit=0
+state_warn=0
+state_ok=0
+state_unknown=0
+list_ports=""
+for s in $status
+do
+	PORTCNT=$(((PORTCNT + 1)))
+	if [ "$s" = "1" ];
+	then
+		state_crit=$(((state_crit + 1)))
+		list_ports="$list_ports $PORTCNT"
+	fi
+done
+
+
+
+# Report our findings
+if [ $state_crit -eq 0 ]
+then
+	echo "OK - No loops detected, checked $PORTCNT ports."
+	exit $STATE_OK
+elif [ $state_crit -gt 0 ]
+then
+	loopcnt=$(((state_crit - 1)))
+	if [ $loopcnt -eq 1 ]
+	then
+		echo "CRITICAL - found a loop on the following ports: $list_ports"
+	else
+		echo "CRITICAL - found loops on the following ports: $list_ports"
+	fi
+	exit $STATE_CRITICAL
+else
+	echo "UNKNOWN - unknown state"
+	exit $STATE_UNKNOWN
+fi
+
+echo "UNKNOWN - should never reach this part!"
+exit $STATE_OK
