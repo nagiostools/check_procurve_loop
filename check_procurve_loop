@@ -1,16 +1,22 @@
 #!/bin/bash
 #############################################################################
 # File         check_procurve_loop
-# Version      2
+# Version      3
 # Description  Monitor HP ProCurve switches for activated loop protection
 # Copyright    Datarådgivarna AB, Nyköping
 # Written by   Daniel Ruus
 # Modified by  Daniel Ruus
 # Created      2012-07-08
-# Modified     2012-07-08
+# Modified     2012-07-10
 #
 # Changelog
 # ===============================================
+#    3  2012-07-10 Daniel Ruus
+#     - Corrected misspelled variable from STATUS_UNKNOWN to STATE_UNKNOWN
+#       used when the command snmpwalk generates an error. This resulted
+#       in an incorrect exit code of 0 being handed over to Nagios, which
+#       in turn flagged the test as being OK, despite the status saying
+#       the status was in an unknown state.
 #    2  2012-07-08 Daniel Ruus
 #     - Misc modifications, such as removing redundant code and catching
 #       errors thrown by snmpwalk
@@ -64,7 +70,7 @@ retval=$?
 if [[ "$retval" -gt 0 ]]
 then
 	echo "UNKNOWN - snmpwalk generated error code $retval, message is '$status'"
-	exit $STATUS_UNKNOWN
+	exit $STATE_UNKNOWN
 fi
 
 state_crit=0
