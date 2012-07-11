@@ -1,9 +1,10 @@
 #!/bin/bash
 #############################################################################
 # File         check_procurve_loop
-# Version      3
+# Version      4
 # Description  Monitor HP ProCurve switches for activated loop protection
-# Copyright    Datarådgivarna AB, Nyköping
+# Copyright    Datarådgivarna AB, Nyköping, Sweden
+# License      Licensed under GPL
 # Written by   Daniel Ruus
 # Modified by  Daniel Ruus
 # Created      2012-07-08
@@ -11,6 +12,8 @@
 #
 # Changelog
 # ===============================================
+#    4  2012-07-10 Daniel Ruus
+#     - Added a note about the license used (GPL) in the header.
 #    3  2012-07-10 Daniel Ruus
 #     - Corrected misspelled variable from STATUS_UNKNOWN to STATE_UNKNOWN
 #       used when the command snmpwalk generates an error. This resulted
@@ -44,7 +47,7 @@ then
 	exit $STATE_UNKNOWN
 fi
 
-# Command line arguments
+# Handle the command line arguments
 if [ $# -lt 4 ]
 then
 	echo "Usage: $0 -H <host> -C <snmp community>"
@@ -90,10 +93,12 @@ done
 # Report our findings
 if [ $state_crit -eq 0 ]
 then
+	# Everything seem to be OK, so report that to Nagios
 	echo "OK - No loops detected ($PORTCNT ports checked)"
 	exit $STATE_OK
 elif [ $state_crit -gt 0 ]
 then
+	# Hmm, we have found a loop so report this!
 	loopcnt=$(((state_crit - 1)))
 	if [ $loopcnt -eq 1 ]
 	then
@@ -107,5 +112,6 @@ else
 	exit $STATE_UNKNOWN
 fi
 
+# The script should never get this far, but let's flag this to Nagios anyway
 echo "UNKNOWN - should never reach this part!"
 exit $STATE_UNKNOWN
