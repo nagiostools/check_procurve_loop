@@ -1,17 +1,19 @@
 #!/bin/bash
 #############################################################################
 # File         check_procurve_loop
-# Version      4
+# Version      5
 # Description  Monitor HP ProCurve switches for activated loop protection
 # Copyright    Datarådgivarna AB, Nyköping, Sweden
 # License      Licensed under GPL
 # Written by   Daniel Ruus
 # Modified by  Daniel Ruus
 # Created      2012-07-08
-# Modified     2012-07-10
+# Modified     2012-07-18
 #
 # Changelog
 # ===============================================
+#    5  2012-07-18 Daniel Ruus
+#     - Added the utils.sh file, cleaned up the code
 #    4  2012-07-10 Daniel Ruus
 #     - Added a note about the license used (GPL) in the header.
 #    3  2012-07-10 Daniel Ruus
@@ -27,16 +29,67 @@
 #     - Initial release
 #############################################################################
 
-# Define the exit codes
-STATE_OK=0
-STATE_WARNING=1
-STATE_CRITICAL=2
-STATE_UNKNOWN=3
+#############################################################################
+#############################################################################
+####                                                                     ####
+####                         VARIABLE DEFINITIONS                        ####
+####                                                                     ####
+#############################################################################
+#############################################################################
 
+# Variable: PATH
+# Purpose : Define a path variable for useful directories
 PATH=/usr/local/bin:/usr/bin:/bin 
 
-# Define a counter for the number of ports on the switch
+# Variable: PROGRNAME
+# Purpose : Extract the scriptname
+PROGNAME=`basename $0`
+
+# Variable: PROGPATH
+# Purpose : Extract the path
+PROGPATH=`echo $0 | sed -e 's,[\\/][^\\/][^\\/]*$,,'`
+
+# Variable: REVISION
+# Purpose : The version number of this script
+REVISION="5"
+
+# Variable: PORTCNT
+# Purpose : Counter for the number of ports available on the switch
 PORTCNT=0
+
+#### End of variable definitions ###
+
+# Include the utils.sh file
+. $PROGPATH/utils.sh
+
+
+#############################################################################
+#############################################################################
+####                                                                     ####
+####                         FUNCTION DEFINITIONS                        ####
+####                                                                     ####
+#############################################################################
+#############################################################################
+
+print_usage() {
+
+	echo "Usage: ${PROGNAME} -H <host> -C <snmp community>"
+
+} # EOF print_usage()
+
+print_help() {
+
+	print_revision $PROGNAME $REVISION
+	echo ""
+	print_usage
+	echo ""
+	echo "This plugin uses snmp to check if a HP ProCurve switch has detected a loop."
+	echo ""
+	support
+	exit 0
+
+} # EOF print_help()
+
 
 # We require the program snmpwalk, so check that we can find it
 check_cmd=$(which snmpwalk > /dev/null)
@@ -48,9 +101,15 @@ then
 fi
 
 # Handle the command line arguments
+if [ "$1" = "-h" ]
+then
+	print_help
+	exit 1
+fi
+
 if [ $# -lt 4 ]
 then
-	echo "Usage: $0 -H <host> -C <snmp community>"
+	print_usage
 	exit 1
 fi
 
@@ -59,7 +118,7 @@ do
        case ${ARGV} in
        H)      host=${OPTARG};;
        C)      community=${OPTARG};;
-       *)      echo "Incorrect option given. Please use options -H for host, -C for SNMP-Community, -t for type, -w for warning and -c for critical"
+       *)      echo "Incorrect option given. Please use options -H for host, -C for SNMP-Community."
                exit 1
                ;;
        esac
